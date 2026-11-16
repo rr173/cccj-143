@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "relslice"
+version = "1.0.0"
+description = "Authenticated offline relational slice delivery over SQLite + SHA-256"
+requires-python = ">=3.11"
+
+[tool.setuptools]
+packages = ["relslice"]
+
+[project.scripts]
+relslice = "relslice.cli:main"

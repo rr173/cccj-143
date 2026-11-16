@@ -1,0 +1,57 @@
+name: cccj-143 task 1 approved LFS publication repair
+'on':
+  push:
+    branches: [maintenance/cccj-143-001-lfs-bootstrap-20261116]
+permissions:
+  contents: write
+jobs:
+  exact-lfs-object:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          fetch-depth: 1
+      - name: Reproduce and hash-check original database bytes
+        run: docker run --rm --network none -v "$PWD:/work" -w /work python:3.11-bookworm python3 maintenance/reproduce-exact-both.py
+      - name: Upload only approved LFS object
+        run: git lfs push --object-id origin 3feb09dac00842992a68080ed876650172efd16ad8376964e9efe93ce19e2cb4
+      - name: Publish exact approved artifact commit
+        shell: bash
+        run: |
+          actual=$(git hash-object -w .git/lfs/small-reproduction.db)
+          test "$actual" = 1568ba3920fc39583f64fb992ea72dc5ef1df4fb
+          git unpack-objects < maintenance/approved-candidate.pack
+          git fetch --no-tags origin refs/heads/pointwise/001/initial:refs/remotes/origin/initial
+          test "$(git rev-parse fc91b61a686681584dae93c9d3e0321f369f5c0d^)" = 9259faeb244fa90df9e4068ea2170d76269a74ca
+          before=$(git ls-remote origin refs/heads/pointwise/001/artifact-round-1)
+          if [ -n "$before" ]; then test "$(echo "$before" | cut -f1)" = fc91b61a686681584dae93c9d3e0321f369f5c0d; fi
+          git -c core.hooksPath=/dev/null push origin fc91b61a686681584dae93c9d3e0321f369f5c0d:refs/heads/pointwise/001/artifact-round-1
+      - name: Fetch published LFS commit
+        shell: bash
+        run: |
+          git init /tmp/cccj-143-lfs-readback
+          git -C /tmp/cccj-143-lfs-readback remote add origin https://github.com/rr173/cccj-143.git
+          git -C /tmp/cccj-143-lfs-readback fetch --no-tags origin fc91b61a686681584dae93c9d3e0321f369f5c0d:refs/remotes/origin/pointwise-artifact
+      - name: Download and verify published LFS objects
+        shell: bash
+        working-directory: /tmp/cccj-143-lfs-readback
+        run: |
+          git lfs fetch origin refs/remotes/origin/pointwise-artifact
+          python3 - <<'PYCODE'
+          import hashlib,json
+          from pathlib import Path
+          row={'path':'demo/artifacts/large.db','sha256':'3feb09dac00842992a68080ed876650172efd16ad8376964e9efe93ce19e2cb4','bytes':160923648}
+          oid=row['sha256'];path=Path('.git/lfs/objects')/oid[:2]/oid[2:4]/oid
+          h=hashlib.sha256()
+          with path.open('rb') as stream:
+              for block in iter(lambda:stream.read(4*1024*1024),b''):h.update(block)
+          assert path.stat().st_size==row['bytes'] and h.hexdigest()==oid
+          Path('lfs-readback.json').write_text(json.dumps({'published_commit':'fc91b61a686681584dae93c9d3e0321f369f5c0d','files':[row]},indent=2)+'\n')
+          print('Fresh remote LFS download matches original database')
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lfs-readback
+          path: /tmp/cccj-143-lfs-readback/lfs-readback.json
