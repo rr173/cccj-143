@@ -1,0 +1,46 @@
+{
+  "format": "relslice-root",
+  "version": 1,
+  "protocol_id": "relslice/v1",
+  "snapshot_id": "snap-large",
+  "schema": {
+    "columns": [
+      {
+        "name": "region",
+        "type": "text",
+        "key": true
+      },
+      {
+        "name": "seq",
+        "type": "int64",
+        "key": true
+      },
+      {
+        "name": "amount",
+        "type": "int64",
+        "key": false
+      },
+      {
+        "name": "label",
+        "type": "text",
+        "key": false
+      },
+      {
+        "name": "flag",
+        "type": "bool",
+        "key": false
+      },
+      {
+        "name": "note",
+        "type": "text",
+        "key": false
+      }
+    ],
+    "row_id_name": "row_id"
+  },
+  "n_rows": 120000,
+  "column_count": 6,
+  "row_tree_root": "7c906b6af9f74322f161d5802594f36a0c713257960d08fb5d0ee3c851da4a07",
+  "token_auth_key": "75c374095b5940d7038b03fc4cd30bf924a550ac7ad1506cd2868e431e46b3d4",
+  "root_commitment": "9f0428dde027b8ec26a2beab470bf1f75517571605657c9cc14ae2fe3be4a0c9"
+}
